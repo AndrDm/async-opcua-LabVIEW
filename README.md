@@ -12,9 +12,9 @@ Read the [compatibility](./docs/compatibility.md) page for how the implementatio
 
 Read the [change log](./CHANGELOG.md) for changes per version as well as aspirational / upcoming work.
 
-## This is a fork
+## This is a fork of a fork
 
-This is a fork of [opcua](https://github.com/locka99/opcua) with a broader goal of a generic OPC-UA implementation and a number of different design decisions. See [fork.md](docs/fork.md) for details on this decision and the differences between this library and the original.
+This is a fork of [async-opcua](https://github.com/freeopcua/async-opcua) with a broader goal of a generic LabVIEW implementation, which is this is a fork of [opcua](https://github.com/locka99/opcua) with a broader goal of a generic OPC-UA implementation and a number of different design decisions. See [fork.md](docs/fork.md) for details on this decision and the differences between this library and the original.
 
 # MSRV Policy
 
