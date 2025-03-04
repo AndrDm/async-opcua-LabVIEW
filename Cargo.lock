@@ -335,6 +335,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-opcua-simple-server-issues"
+version = "0.13.0"
+dependencies = [
+ "async-opcua",
+ "chrono",
+ "log",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "async-opcua-types"
 version = "0.14.0"
 dependencies = [
