@@ -41,9 +41,9 @@ async fn main() {
         .unwrap();
     
     let ns = handle.get_namespace_index("urn:SimpleServer").unwrap();
-unsafe{
+
     add_example_variable(ns, node_manager, handle.subscriptions().clone());
-}
+
     // If you don't register a ctrl-c handler, the server will close without informing clients.
     let handle_c = handle.clone();
     tokio::spawn(async move {
@@ -58,7 +58,7 @@ unsafe{
     server.run().await.unwrap();
 }
 
-unsafe fn add_example_variable(
+fn add_example_variable(
     ns: u16,
     manager: Arc<InMemoryNodeManager<SimpleNodeManagerImpl>>,
     subscriptions: Arc<SubscriptionCache>,) 
