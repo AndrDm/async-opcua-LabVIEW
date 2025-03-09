@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use opcua_core::{trace_read_lock, trace_write_lock};
-use opcua_nodes::NodeSetImport;
+use opcua_nodes::{HasNodeId, NodeSetImport};
 
 use crate::{
-    address_space::{read_node_value, AddressSpace, NodeBase, NodeType},
+    address_space::{read_node_value, write_node_value, AddressSpace},
     node_manager::{
         DefaultTypeTree, MethodCall, MonitoredItemRef, MonitoredItemUpdateRef, NodeManagerBuilder,
         NodeManagersRef, ParsedReadValueId, RequestContext, ServerContext, SyncSampler, WriteNode,
@@ -14,8 +14,8 @@ use crate::{
 };
 use opcua_core::sync::RwLock;
 use opcua_types::{
-    AttributeId, DataValue, MonitoringMode, NodeId, NumericRange, StatusCode, TimestampsToReturn,
-    Variant,
+    AttributeId, DataValue, MonitoringMode, NodeClass, NodeId, NumericRange, StatusCode,
+    TimestampsToReturn, Variant,
 };
 
 use super::{
@@ -364,18 +364,38 @@ impl SimpleNodeManagerImpl {
             }
         };
 
-        let (NodeType::Variable(var), AttributeId::Value) = (node, write.value().attribute_id)
-        else {
+        if node.node_class() != NodeClass::Variable
+            || write.value().attribute_id != AttributeId::Value
+        {
             write.set_status(StatusCode::BadNotWritable);
             return;
-        };
+        }
 
-        let Some(cb) = cbs.get(var.node_id()) else {
-            write.set_status(StatusCode::BadNotWritable);
-            return;
-        };
-
-        write.set_status(cb(write.value().value.clone(), &write.value().index_range));
+        if let Some(cb) = cbs.get(node.as_node().node_id()) {
+            // If there is a callback registered, call that.
+            write.set_status(cb(write.value().value.clone(), &write.value().index_range));
+        } else if write.value().value.value.is_some() {
+            // If not, write the value to the node hierarchy.
+            match write_node_value(node, write.value()) {
+                Ok(_) => write.set_status(StatusCode::Good),
+                Err(e) => write.set_status(e),
+            }
+        } else {
+            // If no value is passed return an error.
+            write.set_status(StatusCode::BadNothingToDo);
+        }
+        if write.status().is_good() {
+            if let Some(val) = node.as_mut_node().get_attribute(
+                TimestampsToReturn::Both,
+                write.value().attribute_id,
+                &NumericRange::None,
+                &opcua_types::DataEncoding::Binary,
+            ) {
+                context.subscriptions.notify_data_change(
+                    [(val, node.node_id(), write.value().attribute_id)].into_iter(),
+                );
+            }
+        }
     }
 
     /// Add a callback called on `Write` for the node given by `id`.
